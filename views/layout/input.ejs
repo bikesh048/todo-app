@@ -1,0 +1,45 @@
+<form action="/save" method="post" onsubmit="return validateForm()">
+    <input type="text" name="text" id="todoText" required>
+    <button type="submit">Add Task</button>
+</form>
+
+
+
+<br>
+<div>
+    <button onclick="filterTodos(true)">Show Completed Todos</button>
+    <button onclick="filterTodos(false)">Show Incomplete Todos</button>
+    <button onclick="filterTodos()">Show All Todos</button>
+</div>
+
+<script>
+    function filterTodos(completed = null) {
+        let url = '/';
+
+        // Set the URL based on the completion status
+        if (completed !== null) {
+            url += `?completed=${completed}`;
+        }
+
+        // Redirect to the new URL
+        window.location.href = url;
+    }
+
+    function validateForm() {
+        // Get the input element
+        const todoText = document.getElementById('todoText');
+
+        // Get the value of the input
+        const textValue = todoText.value.trim();
+
+        // Check if the length is between 6 and 100 characters
+        if (textValue.length < 6 || textValue.length > 100) {
+            // Display an alert or any other form of error handling
+            alert('Text must be between 6 and 100 characters');
+            return false; // Prevent form submission
+        }
+
+        // If validation passes, allow the form submission
+        return true;
+    }
+</script>

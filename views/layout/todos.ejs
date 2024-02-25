@@ -1,0 +1,145 @@
+<!-- Your EJS template with the form -->
+<ul id="todo-list">
+    <% todos.forEach(todo => { %>
+        <li class="<%= todo.completed ? 'completed' : '' %>">
+            <input type="checkbox" id="checkbox-<%= todo._id %>" <%= todo.completed ? 'checked' : '' %> onchange="toggleStrikeThrough('<%= todo._id %>')">
+            <span id="todo-text-<%= todo._id %>"><%= todo.text %></span>
+            <input
+                type="text"
+                id="todo-edit-input-<%= todo._id %>"
+                style="display: none;" 
+            >
+            
+            <!-- Edit button to toggle between text and input field -->
+            <button id="edit-button-<%= todo._id %>" onclick="toggleEdit('<%= todo._id %>')">Edit</button>
+
+            <!-- Save button to save changes (initially hidden) -->
+            <button id="save-button-<%= todo._id %>" style="display: none;" onclick="saveEdit('<%= todo._id %>')">Save</button>
+
+            <button id="cancel-button-<%= todo._id %>" style="display: none;" onclick="toggleEdit('<%= todo._id %>')">Cancel</button>
+
+            <!-- Delete button with a form for submitting the delete request -->
+            <form id="delete-form-<%= todo._id %>" action="/delete/<%= todo._id %>" method="post" style="display: inline;">
+                <button type="submit">Delete</button>
+            </form>
+        </li>
+    <% }); %>
+</ul>
+<script>
+    function toggleEdit(todoId) {
+        const textSpan = document.getElementById(`todo-text-${todoId}`);
+        const editInput = document.getElementById(`todo-edit-input-${todoId}`);
+        const editButton = document.getElementById(`edit-button-${todoId}`);
+        const saveButton = document.getElementById(`save-button-${todoId}`);
+        const cancelButton = document.getElementById(`cancel-button-${todoId}`);
+        const deleteForm = document.getElementById(`delete-form-${todoId}`);
+
+        // Toggle between displaying the text and the input field
+        if (textSpan.style.display === 'none') {
+            textSpan.style.display = 'inline';
+            editInput.style.display = 'none';
+            editButton.style.display = 'inline';
+            saveButton.style.display = 'none';
+            cancelButton.style.display = 'none';
+            deleteForm.style.display = 'inline';
+        } else {
+            textSpan.style.display = 'none';
+            editInput.style.display = 'inline';
+            editButton.style.display = 'none';
+            saveButton.style.display = 'inline';
+            cancelButton.style.display = 'inline';
+            deleteForm.style.display = 'none';
+            editInput.value = textSpan.innerText; // Set the input value to the current text
+            editInput.focus(); // Focus on the input field for editing
+        }
+    }
+
+    function saveEdit(todoId) {
+        const editInput = document.getElementById(`todo-edit-input-${todoId}`);
+        const checkbox = document.getElementById(`checkbox-${todoId}`);
+
+        const todoTextSpan = document.getElementById(`todo-text-${todoId}`);
+        const todoListItem = document.querySelector(`#todo-list li#todo-item-${todoId}`);
+
+        const updatedText = editInput.value;
+
+        fetch(`/update/${todoId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ text: updatedText, completed: checkbox.checked })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json(); // Parse JSON only if the response is OK
+        })
+        .then(updatedTodo => {
+            // Update the text in the frontend
+            console.log('updatedTodo', updatedTodo);
+            todoTextSpan.innerText = updatedTodo.text;
+            todoListItem.classList.toggle('completed', updatedTodo.completed);
+
+        })
+        .catch(error => {
+            console.error('Error updating todo:', error);
+            // Handle errors, e.g., show an error message to the user
+        });
+
+        // Toggle back to display the text after saving
+        toggleEdit(todoId);
+    }
+    
+    function toggleStrikeThrough(todoId) {
+        console.log('id ', todoId)
+        const todoTextSpan = document.getElementById(`todo-text-${todoId}`);
+        const checkbox = document.getElementById(`checkbox-${todoId}`);
+        const editButton = document.getElementById(`edit-button-${todoId}`);
+        const deleteForm = document.getElementById(`delete-form-${todoId}`);
+
+        // Check if elements exist before accessing properties
+        if (todoTextSpan && checkbox) {
+            // Toggle the 'completed' class based on the checkbox state
+            if (checkbox.checked) {
+                todoTextSpan.classList.add('completed');
+                // Hide edit and delete buttons when completed
+                editButton.style.display = 'none';
+                deleteForm.style.display = 'none';
+                todoTextSpan.style.textDecoration = 'line-through';
+            } else {
+                todoTextSpan.classList.remove('completed');
+                // Show edit and delete buttons when not completed
+                todoTextSpan.style.textDecoration = 'none';
+                editButton.style.display = 'inline';
+                deleteForm.style.display = 'inline';
+            }
+            console.log('ress ddd ', todoTextSpan)
+            // Make a post request to update the 'completed' status on the server
+            fetch(`/update/${todoId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: todoTextSpan.innerText, completed: checkbox.checked })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json(); // Parse JSON only if the response is OK
+            })
+            .then(updatedTodo => {
+                // Update the 'completed' status in the frontend
+                console.log('updatedTodo', updatedTodo);
+            })
+            .catch(error => {
+                console.error('Error updating todo:', error);
+                // Handle errors, e.g., show an error message to the user
+            });
+        }
+    }
+
+</script>
+ 
